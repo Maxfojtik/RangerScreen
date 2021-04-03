@@ -3,10 +3,13 @@
 #include <TinyGPS++.h>
 #include <EEPROM.h>
 
-#define MIDBUTTON 8
-#define LEFTBUTTON 2
-#define IGPIN A1
-#define ILPIN A0
+#define OUTPUT0 3
+#define OUTPUT1 4
+#define OUTPUT2 5
+#define OUTPUT3 6
+
+
+
 U8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2(U8G2_R0);
 TinyGPSPlus gps;
 bool wasOn = false;
@@ -44,7 +47,11 @@ void setup() {
   digitalWrite(21, true);
   pinMode(13,OUTPUT);
   digitalWrite(13, true);
-  ECUinit(500000);
+  pinMode(OUTPUT0,OUTPUT);
+  pinMode(OUTPUT1,OUTPUT);
+  pinMode(OUTPUT2,OUTPUT);
+  pinMode(OUTPUT3,OUTPUT);
+  //ECUinit(500000);
 //  pinMode(IGPIN, INPUT);
 //  pinMode(ILPIN, INPUT);
 //  pinMode(LEFTBUTTON, INPUT_PULLUP);
@@ -65,20 +72,14 @@ void setup() {
   digitalWrite(13, false);
   turnOff();
 }
-long lastRequest = 0;
+long lastBlink = 0;
 void loop() 
 {
-  int returnedPID;
-  int returnedData;
-  if(proc(&returnedPID, &returnedData)==1)
+  if(millis()-lastBlink>1000)
   {
-    Serial.print(returnedPID);
-    Serial.print("\t");
-    Serial.println(returnedData);
-  }
-  if(millis()-lastRequest>100)
-  {
-    ECUrequest(0x0C);
+    digitalWrite(OUTPUT0, true);
+    delay(100);
+    digitalWrite(OUTPUT0, false);
   }
   delay(1);
 }
