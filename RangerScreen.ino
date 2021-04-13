@@ -1,6 +1,6 @@
 #include <U8g2lib.h>
 #include <U8x8lib.h>
-#include <TinyGPS++.h>
+//#include <TinyGPS++.h>
 #include <EEPROM.h>
 #include <Encoder.h>
 
@@ -17,37 +17,30 @@
 #define ENCODER_PUSH 12
 #define BED_INPUT 9
 
+#define NUMBER_OUTPUTS 4
+bool outs[NUMBER_OUTPUTS];
 
 U8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2l(U8G2_R2);
 U8G2_SSD1306_128X32_UNIVISION_F_SW_I2C u8g2r(U8G2_R0, 16, 17);
-TinyGPSPlus gps;
+
+//TinyGPSPlus gps;
 Encoder encoder(ENCODER_A, ENCODER_B);
-bool wasOn = false;
-bool wasLightsOn = false;
 #define numAvgs 5
 float voltAvg[numAvgs];
-int mode = 1;
-bool debugMode = false;
-long lastFrame = 0;
-long lastTime = 0;
-long frame = 0;
-bool validTime = false;
-int offset = -4;
-bool validSpeed = false;
-bool doTimeNow = false;
-int timeOff = 0;
-
-bool adjustingTime = false;
-float adjustingTimeCountdown = 0;
-
-double getVoltage()
+int leftMode = 0;
+int rightMode = 0;
+float volts;
+double getVoltage()//read car voltage with a voltage divider
 {
   double vin = (analogRead(VOLTAGE_INPUT)/1023.0*3.3);
-  double R1 = 47.4;
-  double R2 = 7.54;
+  double R1 = 47400;
+  double R2 = 7540;
   return (vin*(R1+R2))/R2;
 }
-
+void setOutput(byte num, bool out)
+{
+  outs[num] = out;
+}
 void turnOff()
 {
   runLogoReversed();
@@ -67,11 +60,12 @@ void setup() {
   pinMode(OUTPUT3,OUTPUT);
   pinMode(VOLTAGE_INPUT,INPUT);
   pinMode(ENCODER_PUSH,INPUT_PULLUP);
+
+  for(int i = 0; i < NUMBER_OUTPUTS; i++)
+  {
+    outs[i] = false;
+  }
   //ECUinit(500000);
-//  pinMode(IGPIN, INPUT);
-//  pinMode(ILPIN, INPUT);
-//  pinMode(LEFTBUTTON, INPUT_PULLUP);
-//  pinMode(MIDBUTTON, INPUT_PULLUP);
 //  Serial2.begin(9600);
   Serial.begin(9600);
   delay(500);
@@ -91,15 +85,18 @@ void setup() {
   digitalWrite(13, false);
   //turnOff();
 }
-long lastBlink = 0;
+long lastFrame = 0;
 void loop() 
 {
-  if(millis()-lastBlink>1000)
+  outs[0] = millis()%1000>(1000/5);
+  outs[1] = millis()%1000>(1000/5*2);
+  outs[2] = millis()%1000>(1000/5*3);
+  outs[3] = millis()%1000>(1000/5*4);
+  if(millis()-lastFrame>16)
   {
-    lastBlink = millis();
-    digitalWrite(OUTPUT0, true);
-    delay(100);
-    digitalWrite(OUTPUT0, false);
+    volts = getVoltage();
+    lastFrame = millis();
+    render();
   }
   delay(1);
 }
