@@ -1654,40 +1654,55 @@ void runLogo()
 {
   for(int i = 0; i < 4; i++)
   {
-    u8g2.clearBuffer();
-    u8g2.drawBitmap(0,0,16,32,FRAMES[i]);
-    u8g2.sendBuffer();
-    delay(100);
+    u8g2r.clearBuffer();
+    u8g2l.clearBuffer();
+    u8g2r.drawBitmap(0,0,16,32,FRAMES[i]);
+    u8g2l.drawBitmap(0,0,16,32,FRAMES[i]);
+    u8g2r.sendBuffer();
+    u8g2l.sendBuffer();
+    delay(50);
   }
   delay(1000);
   for(int i = 4; i < 50; i++)
   {
-    u8g2.clearBuffer();
-    u8g2.drawBitmap(0,0,16,32,FRAMES[i]);
-    u8g2.sendBuffer();
-    delay(40);
+    long start1 = micros();
+    u8g2r.clearBuffer();
+    u8g2r.drawBitmap(0,0,16,32,FRAMES[i]);
+    u8g2r.sendBuffer();
+    long fin1 = micros();
+    long start2 = micros();
+    u8g2l.clearBuffer();
+    u8g2l.drawBitmap(0,0,16,32,FRAMES[i]);
+    u8g2l.sendBuffer();
+    long fin2 = micros();
+    Serial.print(fin1-start1);
+    Serial.print("\t");
+    Serial.print(fin2-start2);
+    Serial.println("\t");
+    
+    delay(20);
   }
   delay(2000);
 }
 void runLogoReversed()
 {
-  u8g2.clearBuffer();
-  u8g2.drawBitmap(0,0,16,32,FRAMES[49]);
-  u8g2.sendBuffer();
+  u8g2l.clearBuffer();
+  u8g2l.drawBitmap(0,0,16,32,FRAMES[49]);
+  u8g2l.sendBuffer();
   delay(2000);
   for(int i = 49; i > 2; i--)
   {
-    u8g2.clearBuffer();
-    u8g2.drawBitmap(0,0,16,32,FRAMES[i]);
-    u8g2.sendBuffer();
+    u8g2l.clearBuffer();
+    u8g2l.drawBitmap(0,0,16,32,FRAMES[i]);
+    u8g2l.sendBuffer();
     delay(40);
   }
   delay(1000);
   for(int i = 2; i >= 0; i--)
   {
-    u8g2.clearBuffer();
-    u8g2.drawBitmap(0,0,16,32,FRAMES[i]);
-    u8g2.sendBuffer();
+    u8g2l.clearBuffer();
+    u8g2l.drawBitmap(0,0,16,32,FRAMES[i]);
+    u8g2l.sendBuffer();
     delay(500);
   }
 }
