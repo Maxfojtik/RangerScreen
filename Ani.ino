@@ -1684,6 +1684,10 @@ void runLogo()
   }
   delay(2000);
 }
+void runLogoASync(U8G2 u8g2, int frame)
+{
+  u8g2r.drawBitmap(0,0,16,32,FRAMES[frame]);
+}
 void runLogoReversed()
 {
   u8g2l.clearBuffer();

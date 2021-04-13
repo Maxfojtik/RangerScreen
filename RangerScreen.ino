@@ -16,6 +16,7 @@
 #define ENCODER_B 10
 #define ENCODER_PUSH 12
 #define BED_INPUT 9
+#define SWITCH_A 2
 
 #define NUMBER_OUTPUTS 4
 bool outs[NUMBER_OUTPUTS];
@@ -27,9 +28,11 @@ U8G2_SSD1306_128X32_UNIVISION_F_SW_I2C u8g2r(U8G2_R0, 16, 17);
 Encoder encoder(ENCODER_A, ENCODER_B);
 #define numAvgs 5
 float voltAvg[numAvgs];
-int leftMode = 0;
-int rightMode = 0;
+int leftMode = -1;
+int rightMode = -1;
 float volts;
+int wakeReason = 0;//0 = ignition, 1 = tailgate, 2 = switch_a
+
 double getVoltage()//read car voltage with a voltage divider
 {
   double vin = (analogRead(VOLTAGE_INPUT)/1023.0*3.3);
@@ -60,7 +63,17 @@ void setup() {
   pinMode(OUTPUT3,OUTPUT);
   pinMode(VOLTAGE_INPUT,INPUT);
   pinMode(ENCODER_PUSH,INPUT_PULLUP);
-
+  pinMode(BED_INPUT,INPUT_PULLDOWN);
+  pinMode(SWITCH_A,INPUT_PULLDOWN);
+  delay(50);
+  if(digitalRead(SWITCH_A))
+  {
+    wakeReason = 2;
+  }
+  else if(digitalRead(BED_INPUT))
+  {
+    wakeReason = 1;
+  }
   for(int i = 0; i < NUMBER_OUTPUTS; i++)
   {
     outs[i] = false;
@@ -73,10 +86,10 @@ void setup() {
 //  debugMode = analogRead(A1)<500;
 //  Serial.println(debugMode ? "DEBUG MODE":"");
   u8g2l.begin();
-  u8g2l.setContrast(1);
+  u8g2l.setContrast(255);
   u8g2l.clearBuffer();
   u8g2r.begin();
-  u8g2r.setContrast(1);
+  u8g2r.setContrast(255);
   u8g2r.clearBuffer();
 //  if(!debugMode)
 //  {
@@ -84,6 +97,11 @@ void setup() {
 //  }
   digitalWrite(13, false);
   //turnOff();
+}
+void loadModes()
+{
+  leftMode = 1;
+  rightMode = 0;
 }
 long lastFrame = 0;
 void loop() 
