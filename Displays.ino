@@ -1,93 +1,120 @@
-void drawVoltage(U8G2 u8g2)
+void drawVoltage(U8G2 display)
 {
-  u8g2.setDrawColor(1);
+  display.setDrawColor(1);
   String str =  String(volts, 2);
   if(volts<10)
   {
-    u8g2.setCursor(27, 32);
-    u8g2.setFont(u8g2_font_logisoso32_tf);
-    u8g2.print(str.c_str());
-    u8g2.setCursor(100, 32);
-    u8g2.setFont(u8g2_font_logisoso16_tf);
-    u8g2.print("v");
+    display.setCursor(27, 32);
+    display.setFont(u8g2_font_logisoso32_tf);
+    display.print(str.c_str());
+    display.setCursor(100, 32);
+    display.setFont(u8g2_font_logisoso16_tf);
+    display.print("v");
   }
   else
   {
-    u8g2.setCursor(10, 32);
-    u8g2.setFont(u8g2_font_logisoso32_tf);
-    u8g2.print(str.c_str());
-    u8g2.setCursor(105, 32);
-    u8g2.setFont(u8g2_font_logisoso16_tf);
-    u8g2.print("v");
+    display.setCursor(10, 32);
+    display.setFont(u8g2_font_logisoso32_tf);
+    display.print(str.c_str());
+    display.setCursor(105, 32);
+    display.setFont(u8g2_font_logisoso16_tf);
+    display.print("v");
   }
 }
-void determineAndRender(int mode, U8G2 u8g2, bool left)
+void determineAndRender(int mode, U8G2 display, bool left)
 {
-  u8g2.clearBuffer();
+  display.clearBuffer();
   if(mode == -1)//startup
   {
+    int FPS = 15;
+    int framesLeft = 49;
+    int framesRight = 41;
+    int frameNum = (millis()-startAnimation)/(1000/FPS);
     if(left)//run normal animation
     {
-      int FPS = 15;
-      int frames = 50;
-      int frameNum = millis()/(1000/FPS);
-      if(frameNum>4)//pause for 2 seconds at 4th frame
+      if(frameNum>3)//pause for 2 seconds at 3rd frame
       {
-        frameNum = frameNum-FPS*2;
-        if(frameNum<4)
+        frameNum = frameNum-10;
+        if(frameNum<3)
         {
-          frameNum = 4;
+          frameNum = 3;
         }
       }
-      if(frameNum>(frames+FPS*2))//pause for 2 seconds at main logo
+      if(frameNum>(framesLeft+30))//pause for 2 seconds at main logo
       {
         loadModes();
       }
-      if(frameNum>frames)//if we are running overtime then dont.
+      if(frameNum>framesLeft)//if we are running overtime then dont.
       {
-        frameNum = frames;
+        frameNum = framesLeft;
       }
-      runLogoASync(u8g2, frameNum);
+      runLogoASyncLeft(display, frameNum);
     }
     else//display wake reason or half animation if none
     {
-      if(wakeReason==1)
+      int waitFrames = 10;
+      int secondWaitFrame = 16;
+      int secondWaitFrameTime = 6;
+      if(frameNum<waitFrames)
       {
-        u8g2.setCursor(10, 10);
-        u8g2.setFont(u8g2_font_logisoso16_tf);
-        u8g2.print("Bed Lights");
+        frameNum = -1;
+      }
+      else
+      {
+        frameNum = frameNum - waitFrames;
+      }
+      if(frameNum>secondWaitFrame)
+      {
+        if(frameNum<secondWaitFrame+secondWaitFrameTime)
+        {
+          frameNum = secondWaitFrame;
+        }
+        else
+        {
+          frameNum = frameNum - secondWaitFrameTime;
+        }
+      }
+      if(frameNum>framesRight)//if we are running overtime then dont.
+      {
+        frameNum = framesRight;
+      }
+      if(frameNum>=0)
+      {
+        runLogoASyncRight(display, frameNum);
       }
     }
   }
   else if(mode == 0)
   {
-    
   }
   else if(mode == 1)
   {
-    drawVoltage(u8g2);
+    drawVoltage(display);
   }
 }
 void render()
 {
   determineAndRender(leftMode, u8g2l, true);
-  determineAndRender(rightMode, u8g2r, false);
-  if(outs[0])
-  {
-    u8g2l.drawBox(0,0,64,2);
-  }
-  if(outs[1])
-  {
-    u8g2l.drawBox(64,0,64,2);
-  }
-  if(outs[2])
-  {
-    u8g2r.drawBox(0,0,64,2);
-  }
-  if(outs[3])
-  {
-    u8g2r.drawBox(64,0,64,2);
-  }
   u8g2l.sendBuffer();
+  determineAndRender(rightMode, u8g2r, false);
   u8g2r.sendBuffer();
+//  if(leftMode!=-1)
+//  {
+//    if(outs[0])
+//    {
+//      u8g2l.drawBox(0,0,64,2);
+//    }
+//    if(outs[1])
+//    {
+//      u8g2l.drawBox(64,0,64,2);
+//    }
+//    if(outs[2])
+//    {
+//      u8g2r.drawBox(0,0,64,2);
+//    }
+//    if(outs[3])
+//    {
+//      u8g2r.drawBox(64,0,64,2);
+//    }
+//  }
 }

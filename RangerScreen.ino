@@ -32,6 +32,7 @@ int leftMode = -1;
 int rightMode = -1;
 float volts;
 int wakeReason = 0;//0 = ignition, 1 = tailgate, 2 = switch_a
+long startAnimation = 0;
 
 double getVoltage()//read car voltage with a voltage divider
 {
@@ -93,9 +94,10 @@ void setup() {
   u8g2r.clearBuffer();
 //  if(!debugMode)
 //  {
-    runLogo();
+    //runLogo();
 //  }
   digitalWrite(13, false);
+  startAnimation = millis();
   //turnOff();
 }
 void loadModes()
@@ -106,19 +108,15 @@ void loadModes()
 long lastFrame = 0;
 void loop() 
 {
-  u8g2l.drawBox(0,0,128,64);
-  u8g2r.drawBox(0,0,128,64);
-  u8g2l.sendBuffer();
-  u8g2r.sendBuffer();
 //  outs[0] = millis()%1000>(1000/5);
 //  outs[1] = millis()%1000>(1000/5*2);
 //  outs[2] = millis()%1000>(1000/5*3);
 //  outs[3] = millis()%1000>(1000/5*4);
-//  if(millis()-lastFrame>16)
-//  {
-//    volts = getVoltage();
-//    lastFrame = millis();
-//    render();
-//  }
-//  delay(1);
+  if(millis()-lastFrame>16)
+  {
+    volts = getVoltage();
+    lastFrame = millis();
+    render();
+  }
+  delay(1);
 }
