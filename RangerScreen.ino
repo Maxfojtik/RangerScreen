@@ -10,49 +10,55 @@
 #define OUTPUT3 6
 #define LATCH_PIN 21
 
-#define VOLTAGE_INPUT A7
+#define VOLTAGE_INPUT A6
+#define ILL_INPUT A1
 #define ENCODER_PUSH 12
 #define ENCODER_A 11
 #define ENCODER_B 10
 #define ENCODER_PUSH 12
-#define BED_INPUT 9
+#define BED_INPUT A8
+#define BED_SWITCH A9
 #define SWITCH_A 2
+#define SWITCH_B 1
 
 #define NUMBER_OUTPUTS 4
-bool outs[NUMBER_OUTPUTS];
+byte outs[NUMBER_OUTPUTS];
 
 U8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2l(U8G2_R2);
-U8G2_SSD1306_128X32_UNIVISION_F_SW_I2C u8g2r(U8G2_R0, 16, 17);
+U8G2_SSD1306_128X32_UNIVISION_F_2ND_HW_I2C u8g2r(U8G2_R0);
+
+#define REASON_IGNITION 0
+#define REASON_TAILGATEDOWN 1
+#define REASON_TAILGATESW 2
+#define REASON_SWITCHA 3
+#define REASON_SWITCHB 4
+
+#define loopTime 20
 
 //TinyGPSPlus gps;
 Encoder encoder(ENCODER_A, ENCODER_B);
 #define numAvgs 5
 float voltAvg[numAvgs];
+byte voltAvgIndex = 0;
+#define numGraphPix 128
+byte voltGraph[numGraphPix];//values: 0-32
+byte voltDisplayIndex = 0;
 int leftMode = -1;
 int rightMode = -1;
 float volts;
-int wakeReason = 0;//0 = ignition, 1 = tailgate, 2 = switch_a
+int onReason = 0;//0 = ignition, 1 = tailgate, 2 = tailgate sw, 3 = switch_a, 4 = switch_b
 long startAnimation = 0;
+long oldPosition = 0;
+boolean bedDown = false;
+boolean bedSwitch = false;
+boolean ill = false;
+boolean switchA = false;
+boolean switchB = false;
+boolean tailgateToggle = false;
+boolean encoderPush = false;
+bool isInMenu = false;
+int menuMode = 0;
 
-double getVoltage()//read car voltage with a voltage divider
-{
-  double vin = (analogRead(VOLTAGE_INPUT)/1023.0*3.3);
-  double R1 = 47400;
-  double R2 = 7540;
-  return (vin*(R1+R2))/R2;
-}
-void setOutput(byte num, bool out)
-{
-  outs[num] = out;
-}
-void turnOff()
-{
-  runLogoReversed();
-  digitalWrite(LATCH_PIN, false);
-  u8g2l.setDrawColor(0);
-//  while(analogRead(IGPIN)<512)
-//  {}
-}
 void setup() {
   pinMode(LATCH_PIN, OUTPUT);
   digitalWrite(LATCH_PIN, true); //latch myself on
@@ -62,27 +68,47 @@ void setup() {
   pinMode(OUTPUT1,OUTPUT);
   pinMode(OUTPUT2,OUTPUT);
   pinMode(OUTPUT3,OUTPUT);
+  digitalWrite(OUTPUT0, 0);
+  digitalWrite(OUTPUT1, 0);
+  digitalWrite(OUTPUT2, 0);
+  digitalWrite(OUTPUT3, 0);
   pinMode(VOLTAGE_INPUT,INPUT);
   pinMode(ENCODER_PUSH,INPUT_PULLUP);
-  pinMode(BED_INPUT,INPUT_PULLDOWN);
+  pinMode(ILL_INPUT,INPUT);
+  pinMode(BED_INPUT,INPUT);
   pinMode(SWITCH_A,INPUT_PULLDOWN);
-  delay(50);
+  pinMode(SWITCH_B,INPUT_PULLDOWN);
+  delay(100);
   if(digitalRead(SWITCH_A))
   {
-    wakeReason = 2;
+    onReason = 3;
   }
-  else if(digitalRead(BED_INPUT))
+  else if(digitalRead(SWITCH_B))
   {
-    wakeReason = 1;
+    onReason = 4;
+  }
+  else if(analogRead(BED_INPUT)>100)
+  {
+    onReason = 1;
+  }
+  else if(analogRead(BED_SWITCH)>100)
+  {
+    onReason = 2;
+    tailgateToggle = true;
+    bedSwitch = true;
   }
   for(int i = 0; i < NUMBER_OUTPUTS; i++)
   {
-    outs[i] = false;
+    outs[i] = 0;
+  }
+  for(int i = 0; i < numGraphPix; i++)
+  {
+    voltGraph[i] = 64;
   }
   //ECUinit(500000);
 //  Serial2.begin(9600);
   Serial.begin(9600);
-  delay(500);
+  //delay(500);
 //  setTime(getTeensy3Time());
 //  debugMode = analogRead(A1)<500;
 //  Serial.println(debugMode ? "DEBUG MODE":"");
@@ -103,20 +129,34 @@ void setup() {
 void loadModes()
 {
   leftMode = 1;
-  rightMode = 0;
+  rightMode = 2;
 }
 long lastFrame = 0;
 void loop() 
 {
-//  outs[0] = millis()%1000>(1000/5);
-//  outs[1] = millis()%1000>(1000/5*2);
-//  outs[2] = millis()%1000>(1000/5*3);
-//  outs[3] = millis()%1000>(1000/5*4);
-  if(millis()-lastFrame>16)
+  if(millis()-lastFrame>loopTime)
   {
-    volts = getVoltage();
     lastFrame = millis();
+    digitalWrite(13, true);
+    if(volts<6 && !bedDown && leftMode!=-1 && !ill)
+    {
+      if(leftMode!=-2)
+      {
+        startAnimation = millis();
+      }
+      leftMode = -2;
+      rightMode = -2;
+    }
+    else if(leftMode==-2)
+    {
+      loadModes();
+    }
+    displayLogic();
     render();
+    inputLogic();
+    outputsLogic();
+    digitalWrite(13, false);
+    //Serial.println(millis()-lastFrame);
   }
-  delay(1);
+  //delay(1);
 }
