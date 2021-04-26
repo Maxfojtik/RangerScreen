@@ -58,6 +58,9 @@ boolean tailgateToggle = false;
 boolean encoderPush = false;
 bool isInMenu = false;
 int menuMode = 0;
+bool ignoreTailgate = false;
+bool editingModeLeft = false;
+bool editingModeRight = false;
 
 void setup() {
   pinMode(LATCH_PIN, OUTPUT);
@@ -79,6 +82,7 @@ void setup() {
   pinMode(SWITCH_A,INPUT_PULLDOWN);
   pinMode(SWITCH_B,INPUT_PULLDOWN);
   delay(100);
+  loadVariables();
   if(digitalRead(SWITCH_A))
   {
     onReason = 3;
@@ -126,10 +130,15 @@ void setup() {
   startAnimation = millis();
   //turnOff();
 }
+void loadVariables()
+{
+  loadModes();
+  ignoreTailgate = EEPROM.read(2)==1;
+}
 void loadModes()
 {
-  leftMode = 1;
-  rightMode = 2;
+  leftMode = EEPROM.read(0);
+  rightMode = EEPROM.read(1);
 }
 long lastFrame = 0;
 void loop() 

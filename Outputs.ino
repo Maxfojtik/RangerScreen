@@ -14,7 +14,7 @@ byte bedLightsFunction(byte time)
 float bedTime = 0;
 void outputsLogic()
 {
-  boolean bedLightsOn = bedDown || switchA;
+  boolean bedLightsOn = (bedDown && !ignoreTailgate) || switchA;
   if(bedLightsOn && bedTime<255)
   {
     bedTime = bedTime + (1.0/loopTime)*255/2;

@@ -1,20 +1,90 @@
+int mostMode = 2;
 void encoderDown()
 {
-  
+  if(editingModeLeft)
+  {
+    leftMode--;
+    if(leftMode<0)
+    {
+      leftMode = 0;
+    }
+    EEPROM.write(0, leftMode); 
+  }
+  else if(editingModeRight)
+  {
+    rightMode--;
+    if(rightMode<0)
+    {
+      rightMode = 0;
+    }
+    EEPROM.write(1, rightMode);
+  }
+  else
+  {
+    if(menuMode<0)
+    {
+      menuMode = 0;
+    }
+  }
 }
 void encoderUp()
 {
-  
+  if(editingModeLeft)
+  {
+    leftMode++;
+    if(leftMode>mostMode)
+    {
+      leftMode = mostMode;
+    }
+    EEPROM.write(0, leftMode); 
+  }
+  else if(editingModeRight)
+  {
+    rightMode++;
+    if(rightMode>mostMode)
+    {
+      rightMode = mostMode;
+    }
+    EEPROM.write(1, rightMode); 
+  }
+  else
+  {
+    if(menuMode>3)
+    {
+      menuMode = 3;
+    }
+  }
 }
+long lastEncoderPushed = 0;
 void encoderPushed()
 {
-  if(!isInMenu)
+  if(millis()-lastEncoderPushed>200)
   {
-    isInMenu = true;
-  }
-  if(menuMode==0)
-  {
-    isInMenu = false;
+    lastEncoderPushed = millis();
+    if(!isInMenu)
+    {
+      isInMenu = true;
+    }
+    else
+    {
+      if(menuMode==0)
+      {
+        isInMenu = false;
+      }
+      else if(menuMode == 1)
+      {
+        editingModeLeft = !editingModeLeft;
+      }
+      else if(menuMode == 2)
+      {
+        editingModeRight = !editingModeRight;
+      }
+      else if(menuMode == 3)
+      {
+        ignoreTailgate = !ignoreTailgate;
+        EEPROM.write(3, ignoreTailgate ? 1 : 0); 
+      }
+    }
   }
 }
 float avgVoltage()
@@ -91,7 +161,7 @@ void inputLogic()
     oldPosition = encoder.read();
   }
   boolean encoderPushNow = digitalRead(ENCODER_PUSH);
-  if(encoderPushNow && !encoderPush && !isInMenu)
+  if(encoderPushNow && !encoderPush)
   {
     encoderPushed();
   }

@@ -1,3 +1,28 @@
+void writeCentered(U8G2 display, char* str, byte y)
+{
+  int strWidth = display.getStrWidth(str);
+  int x = display.getDisplayWidth()/2-strWidth/2;
+  display.drawStr(x, y, str);
+}
+void writeCentered1(U8G2 display, char* str, int charHeight)
+{
+  int strWidth = display.getStrWidth(str);
+  int x = display.getDisplayWidth()/2-strWidth/2;
+  int y = display.getDisplayHeight()/2-charHeight/2;
+  display.drawStr(x, y, str);
+}
+void writeCentered2(U8G2 display, char* str1, char* str2, int charHeight)
+{
+  int strWidth = display.getStrWidth(str1);
+  int x = display.getDisplayWidth()/2-strWidth/2;
+  int y = display.getDisplayHeight()/4-charHeight/2;
+  display.drawStr(x, y, str1);
+  
+  strWidth = display.getStrWidth(str2);
+  x = display.getDisplayWidth()/2-strWidth/2;
+  y = display.getDisplayHeight()/4*3-charHeight/2;
+  display.drawStr(x, y, str2);
+}
 void putToDisplay(float avg)
 {
   float min = 8;
@@ -162,43 +187,6 @@ void determineAndRenderMode(int mode, U8G2 display, bool left)
       {
         display.drawBox(64,0,64,2);
       }
-    }
-  }
-}
-void writeCentered(U8G2 display, char* str, byte y)
-{
-  int strWidth = display.getStrWidth(str);
-  int x = display.getDisplayWidth()/2-strWidth/2;
-  display.drawStr(x, y, str);
-}
-void writeCentered1(U8G2 display, char* str)
-{
-  int strWidth = display.getStrWidth(str);
-  int x = display.getDisplayWidth()/2-strWidth/2;
-  int y = display.getDisplayHeight()/2-display.getMaxCharHeight()/2;
-  display.drawStr(x, y, str);
-}
-void writeCentered2(U8G2 display, char* str1, char* str2)
-{
-  int strWidth = display.getStrWidth(str1);
-  int x = display.getDisplayWidth()/2-strWidth/2;
-  int y = display.getDisplayHeight()/4-display.getMaxCharHeight()/2;
-  display.drawStr(x, y, str1);
-  
-  strWidth = display.getStrWidth(str2);
-  x = display.getDisplayWidth()/2-strWidth/2;
-  y = display.getDisplayHeight()/4*3-display.getMaxCharHeight()/2;
-  display.drawStr(x, y, str2);
-}
-void determineAndRenderMenu(U8G2 display, bool left)
-{
-  if(left)
-  {
-    if(menuMode==0)
-    {
-      u8g2l.clearBuffer();
-      u8g2l.setFont(u8g2_font_crox4h_tf);
-      writeCentered1(display, "Exit");
     }
   }
 }
