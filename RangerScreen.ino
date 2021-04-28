@@ -3,6 +3,7 @@
 //#include <TinyGPS++.h>
 #include <EEPROM.h>
 #include <Encoder.h>
+#include <ELMduino.h>
 
 #define OUTPUT0 3
 #define OUTPUT1 4
@@ -19,10 +20,13 @@
 #define BED_INPUT A8
 #define BED_SWITCH A9
 #define SWITCH_A 2
-#define SWITCH_B 1
+#define SWITCH_B 9
 
 #define NUMBER_OUTPUTS 4
 byte outs[NUMBER_OUTPUTS];
+
+#define ELM_PORT Serial1
+ELM327 myELM327;
 
 U8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2l(U8G2_R2);
 U8G2_SSD1306_128X32_UNIVISION_F_2ND_HW_I2C u8g2r(U8G2_R0);
@@ -127,6 +131,8 @@ void setup() {
     //runLogo();
 //  }
   digitalWrite(13, false);
+  ELM_PORT.begin(115200);
+  
   startAnimation = millis();
   //turnOff();
 }
