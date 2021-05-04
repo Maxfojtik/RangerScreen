@@ -210,7 +210,7 @@ void render()
   writeLeft = !writeLeft;
   if(writeLeft)
   {
-    if(isInMenu)
+    if(isInMenu && false)
     {
       determineAndRenderMenu(u8g2l, true);
     }
