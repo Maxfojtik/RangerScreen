@@ -67,9 +67,9 @@ bool editingModeLeft = false;
 bool editingModeRight = false;
 float speedMPH = 0;
 float heading = -1;
-
+bool inited = false;
 void setup() {
-  long start = millis();
+  //long start = millis();
   pinMode(LATCH_PIN, OUTPUT);
   digitalWrite(LATCH_PIN, true); //latch myself on
   pinMode(13,OUTPUT);
@@ -92,24 +92,7 @@ void setup() {
   pinMode(SWITCH_B,INPUT_PULLDOWN);
   delay(10);
   loadVariables();
-  if(digitalRead(SWITCH_A))
-  {
-    onReason = 3;
-  }
-  else if(digitalRead(SWITCH_B))
-  {
-    onReason = 4;
-  }
-  else if(analogRead(BED_INPUT)>100)
-  {
-    onReason = 1;
-  }
-  else if(analogRead(BED_SWITCH)>100)
-  {
-    onReason = 2;
-    tailgateToggle = true;
-    bedSwitch = true;
-  }
+  Serial.begin(115200);
   for(int i = 0; i < NUMBER_OUTPUTS; i++)
   {
     outs[i] = 0;
@@ -118,29 +101,36 @@ void setup() {
   {
     voltGraph[i] = 64;
   }
-  //ECUinit(500000);
-//  Serial2.begin(9600);
-  Serial.begin(115200);
-  
-  //delay(500);
-//  setTime(getTeensy3Time());
-//  debugMode = analogRead(A1)<500;
-//  Serial.println(debugMode ? "DEBUG MODE":"");
-  //u8g2l.setBusClock(1000000);
+  if(digitalRead(SWITCH_A))
+  {
+    onReason = REASON_SWITCHA;
+  }
+  else if(digitalRead(SWITCH_B))
+  {
+    onReason = REASON_SWITCHB;
+  }
+  else if(analogRead(BED_INPUT)>100)
+  {
+    onReason = REASON_TAILGATEDOWN;
+    return;//dont init if the gate went down
+  }
+  else if(analogRead(BED_SWITCH)>100)
+  {
+    onReason = REASON_TAILGATESW;
+    tailgateToggle = true;
+    bedSwitch = true;
+  }
+  init();
+  //Serial.println(millis()-start);
+}
+void init()
+{
   u8g2l.begin();
   u8g2l.setContrast(255);
   u8g2l.clearBuffer();
-  //u8g2r.setBusClock(1000000);
   u8g2r.begin();
   u8g2r.setContrast(255);
   u8g2r.clearBuffer();
-//  if(!debugMode)
-//  {
-    //runLogo();
-//  }
-
-
-  //Wire.begin();
   if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
@@ -148,11 +138,11 @@ void setup() {
   else
   {
     Serial2.begin(250000);
-    myGNSS.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1); //Several of these are on by default on ublox board so let's disable them
+    myGNSS.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1);
     myGNSS.enableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
     myGNSS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
     myGNSS.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
-    myGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1); //Only leaving GGA & VTG enabled at current navigation rate
+    myGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1);
     myGNSS.enableNMEAMessage(UBX_NMEA_VTG, COM_PORT_UART1);
     myGNSS.configureMessage(UBX_CLASS_NAV, UBX_NAV_PVT, COM_PORT_UART1, 0); //Message Class, ID, and port we want to configure, sendRate of 0 (disable).
     myGNSS.setUART1Output(COM_TYPE_NMEA);
@@ -162,8 +152,7 @@ void setup() {
   }
   digitalWrite(13, false);
   startAnimation = millis();
-  Serial.println(millis()-start);
-  //turnOff();
+  inited = true;
 }
 void loadVariables()
 {
@@ -202,14 +191,24 @@ void loop()
     {
       loadModes();
     }
-    displayLogic();
-    render();
+    if(inited)
+    {
+      displayLogic();
+      render();
+    }
+    else if(outs[0]==255 && !inited && onReason==REASON_TAILGATEDOWN)//init when the bed lights are completly on
+    {
+      init();
+    }
     inputLogic();
     outputsLogic();
     digitalWrite(13, false);
     //Serial.print("time:\t");
     //Serial.println(millis()-lastFrame);
   }
-  GPSLogic();
+  if(inited)//only run GPS when inited, not useful anyway
+  {
+    GPSLogic();
+  }
   //delay(1);
 }
