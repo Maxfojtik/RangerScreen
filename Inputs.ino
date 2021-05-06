@@ -104,12 +104,12 @@ float getVoltage()//read car voltage with a voltage divider
   float R2 = 7540;
   float out = (vin*(R1+R2))/R2;
   voltAvg[voltAvgIndex] = out;
-  putToDisplay(out);
   float avg = avgVoltage();
   voltAvgIndex++;
   if(voltAvgIndex>=numAvgs)
   {
     voltAvgIndex = 0;
+    putToDisplay(avg);
   }
   return avg;
 }

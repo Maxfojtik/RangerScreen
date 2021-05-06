@@ -63,8 +63,8 @@ void drawVoltage(U8G2 display)
   String str =  String(volts, 2);
   if(volts<10)
   {
-    display.setCursor(27, 32);
-    display.setFont(u8g2_font_logisoso30_tf);
+    display.setCursor(27, 31);
+    display.setFont(u8g2_font_logisoso28_tf);
     display.print(str.c_str());
     display.setCursor(100, 32);
     display.setFont(u8g2_font_logisoso16_tf);
@@ -72,13 +72,103 @@ void drawVoltage(U8G2 display)
   }
   else
   {
-    display.setCursor(10, 32);
-    display.setFont(u8g2_font_logisoso30_tf);
+    display.setCursor(10, 31);
+    display.setFont(u8g2_font_logisoso28_tf);
     display.print(str.c_str());
     display.setCursor(105, 32);
     display.setFont(u8g2_font_logisoso16_tf);
     display.print("v");
   }
+}
+void rotatePoint(float* xy, float* origin, float* returnArr, double degrees)
+{
+  float xold = xy[0];
+  float yold = xy[1];
+  float xori = origin[0];
+  float yori = origin[1];
+  float sinval = sin(degrees*0.0174533);//PI/180
+  float cosval = cos(degrees*0.0174533);//PI/180
+  float xnew = (xold-xori)*cosval-(yold-yori)*sinval+xori;
+  float ynew = (xold-xori)*sinval+(yold-yori)*cosval+yori;
+  returnArr[0] = xnew;
+  returnArr[1] = ynew;
+}
+void drawRotatedLine(U8G2 display, float* xy1, float* xy2, float* origin, double degrees)
+{
+  int x1 = 0;
+  int y1 = 0;
+  int x2 = 0;
+  int y2 = 0;
+  float ret[] = {0, 0};
+  rotatePoint(xy1, origin, ret, degrees);
+  x1 = int(ret[0]);
+  y1 = int(ret[1]);
+  rotatePoint(xy2, origin, ret, degrees);
+  x2 = int(ret[0]);
+  y2 = int(ret[1]);
+  display.drawLine(x1,y1,x2,y2);
+}
+void drawHeading(U8G2 display, float heading)
+{
+  float origin[] = {20,16};
+  float stemBottom[] = {origin[0], origin[1]+10};//stem bottom
+  float stemTop[] = {origin[0], origin[1]-10};//stem top
+  drawRotatedLine(display, stemTop, stemBottom, origin, heading);
+  //rightSide top covered by stemtop
+  float rightBottom[] = {stemTop[0]+5, stemTop[1]+5};//rightSide bottom
+  drawRotatedLine(display, stemTop, rightBottom, origin, heading);
+  //leftSide top covered by stemtop
+  float leftBottom[] = {stemTop[0]-5, stemTop[1]+5};//rightSide bottom
+  drawRotatedLine(display, stemTop, leftBottom, origin, heading);
+  //display.drawCircle(origin[0], origin[1], 12, U8G2_DRAW_ALL);
+}
+void drawSpeed(U8G2 display)
+{
+  display.setDrawColor(1);
+  if(speedMPH<0)
+  {
+    display.setCursor(15, 24);
+    display.setFont(u8g2_font_logisoso16_tf);
+    display.print("No GPS Fix");
+  }
+  else
+  {
+    float mySpeed = speedMPH;
+    //mySpeed = (millis()/100)%19;
+    if(mySpeed<2)
+    {
+      mySpeed = 0;
+    }
+    if(mySpeed>99)
+    {
+      mySpeed = 99;
+    }
+    String str =  String(mySpeed,0);
+    if(mySpeed<10)
+    {
+      display.setCursor(28, 31);
+      display.setFont(u8g2_font_logisoso28_tf);
+      display.print(str.c_str());
+      display.setCursor(70, 31);
+      display.setFont(u8g2_font_logisoso16_tf);
+      display.print("MPH");
+    }
+    else
+    {
+      display.setCursor(35, 31);
+      display.setFont(u8g2_font_logisoso28_tf);
+      display.print(str.c_str());
+      display.setCursor(77, 31);
+      display.setFont(u8g2_font_logisoso16_tf);
+      display.print("MPH");
+    }
+    //Serial.println(heading);
+    if(heading>0)
+    {
+      drawHeading(display, heading);
+    }
+  }
+  //drawHeading(display, (millis()/10)%360);
 }
 void determineAndRenderMode(int mode, U8G2 display, bool left)
 {
@@ -164,6 +254,10 @@ void determineAndRenderMode(int mode, U8G2 display, bool left)
   {
     drawVoltageGraph(display);
   }
+  else if(mode == 3)
+  {
+    drawSpeed(display);
+  }
   if(mode!=-1 || mode == -2)
   {
     if(left)
@@ -217,8 +311,8 @@ void render()
     else
     {
       determineAndRenderMode(leftMode, u8g2l, true);
-      u8g2l.sendBuffer();
     }
+    u8g2l.sendBuffer();
   }
   else
   {

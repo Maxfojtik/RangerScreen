@@ -1,4 +1,4 @@
-void notUsed()//leftover code from attempts at using an HC-05 to communicate with a bluetooth OBD2
+/*void notUsed()//leftover code from attempts at using an HC-05 to communicate with a bluetooth OBD2
 {
 
 if(millis()-lastCar>250 && false)
@@ -109,4 +109,4 @@ if(millis()-lastCar>250 && false)
       //delay(1000);
       state++;
     }
-}
+}*/
