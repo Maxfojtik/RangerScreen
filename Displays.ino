@@ -56,6 +56,23 @@ void drawVoltageGraph(U8G2 display)
       display.drawPixel(numGraphPix-i, 31-voltGraph[i]);
     }
   }
+  //volts = millis()%1000/50.0;
+  String str =  String(volts, 2);
+  display.setCursor(5, 31);
+  display.setFont(u8g2_font_profont12_tf);
+  display.print(str.c_str());
+  if(volts<10)
+  {
+    display.setCursor(30, 31);
+    display.setFont(u8g2_font_profont10_tf);
+    display.print("v");
+  }
+  else
+  {
+    display.setCursor(36, 31);
+    display.setFont(u8g2_font_profont10_tf);
+    display.print("v");
+  }
 }
 void drawVoltage(U8G2 display)
 {
@@ -125,7 +142,13 @@ void drawHeading(U8G2 display, float heading)
 void drawSpeed(U8G2 display)
 {
   display.setDrawColor(1);
-  if(speedMPH<0)
+  if(GPSError)
+  {
+    display.setCursor(15, 24);
+    display.setFont(u8g2_font_logisoso16_tf);
+    display.print("GPS Error!");
+  }
+  else if(speedMPH<-.5)
   {
     display.setCursor(15, 24);
     display.setFont(u8g2_font_logisoso16_tf);

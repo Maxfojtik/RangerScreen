@@ -67,48 +67,44 @@ float putAvgHeading(float headingin)
   }
   return avg;
 }
-
+long timeInvalid = 0;
 void GPSLogic()
 {
+//  if(Serial2.available()>0)
+//  {
+//    Serial.write(Serial2.read());
+//  }
+//  return;
   if(gps.available(Serial2)) 
   {
+    //Serial.println("----------------------read---------------------");
     fix = gps.read();
     if(fix.valid.speed)
     {
       speedMPH = putAvgMPH(fix.speed_mph());
+      timeInvalid = -1;
       //Serial.println(speedMPH);
     }
     else
     {
-      speedMPH = -1;
+      if(timeInvalid==-1)//if we have an invalid time for more than 1 second start putting 0s.
+      {
+        timeInvalid = millis();
+      }
+      if(millis()-timeInvalid>1000)
+      {
+        speedMPH = putAvgMPH(0);
+      }
+      //speedMPH = -1;
     }
     if(fix.valid.heading)
     {
       heading = putAvgHeading(fix.heading());
       //Serial.println(heading);
     }
-    //if(millis()-lastGPS>100)
-    //{
-      /*Serial.print(millis()-lastGPS);
-      Serial.print("\t");
-      if(fix.valid.status)
-      {
-        Serial.print(fix.status);
-      }
-      else
-      {
-        Serial.print("no status");
-      }
-      Serial.print("\t");
-      if(fix.valid.speed)
-      {
-        Serial.println(fix.speed_mph());
-      }
-      else
-      {
-        Serial.println("no speed");
-      }
-      lastGPS = millis();*/
-    //}
+  }
+  else
+  {
+    //Serial.println("no read");
   }
 }

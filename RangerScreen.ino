@@ -65,9 +65,10 @@ int menuMode = 0;
 bool ignoreTailgate = false;
 bool editingModeLeft = false;
 bool editingModeRight = false;
-float speedMPH = 0;
+float speedMPH = -1;
 float heading = -1;
 bool inited = false;
+bool GPSError = false;
 void setup() {
   //long start = millis();
   pinMode(LATCH_PIN, OUTPUT);
@@ -125,23 +126,25 @@ void setup() {
 }
 void init()
 {
+  digitalWrite(13, true);
   u8g2l.begin();
   u8g2l.setContrast(255);
   u8g2l.clearBuffer();
   u8g2r.begin();
   u8g2r.setContrast(255);
   u8g2r.clearBuffer();
-  if (myGNSS.begin() == false) //Connect to the u-blox module using Wire port
+  if (!myGNSS.begin()) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
+    GPSError = true;
   }
   else
   {
     Serial2.begin(250000);
     myGNSS.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1);
+    myGNSS.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
     myGNSS.enableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
     myGNSS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
-    myGNSS.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
     myGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1);
     myGNSS.enableNMEAMessage(UBX_NMEA_VTG, COM_PORT_UART1);
     myGNSS.configureMessage(UBX_CLASS_NAV, UBX_NAV_PVT, COM_PORT_UART1, 0); //Message Class, ID, and port we want to configure, sendRate of 0 (disable).
@@ -150,9 +153,9 @@ void init()
     myGNSS.setNavigationFrequency(10);
     Serial.println(F("GPS configured"));
   }
-  digitalWrite(13, false);
   startAnimation = millis();
   inited = true;
+  digitalWrite(13, false);
 }
 void loadVariables()
 {
@@ -202,9 +205,10 @@ void loop()
     }
     inputLogic();
     outputsLogic();
-    digitalWrite(13, false);
+    //digitalWrite(13, false);
     //Serial.print("time:\t");
     //Serial.println(millis()-lastFrame);
+    digitalWrite(13, false);
   }
   if(inited)//only run GPS when inited, not useful anyway
   {
