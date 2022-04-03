@@ -139,26 +139,107 @@ void drawHeading(U8G2 display, float heading)
   drawRotatedLine(display, stemTop, leftBottom, origin, heading);
   //display.drawCircle(origin[0], origin[1], 12, U8G2_DRAW_ALL);
 }
+long lastDrawNoGPS = 0;
+int randomGPSNumber = 0;
+long timerGPSAnimation = 0;
+byte drawRemember = 0;
+#define timeGPSAni 3000
 void drawSpeed(U8G2 display)
 {
   display.setDrawColor(1);
-  if(GPSError)
+  if(GPSError || millis()-lastGPSComm>5000)
   {
     display.setCursor(15, 24);
     display.setFont(u8g2_font_logisoso16_tf);
     display.print("GPS Error!");
   }
-  else if(speedMPH<-.5)
+  else if(timeInvalid==0 || millis()-timerGPSAnimation<timeGPSAni || timerGPSAnimation==0)//timeInvalid gets set to -1 when we have a fix, and gets set positive when we loose a fix, so 0 everytime else (which is when we dont have a fix to start)
   {
-    display.setCursor(15, 24);
-    display.setFont(u8g2_font_logisoso16_tf);
-    display.print("No GPS Fix");
+    if(timeInvalid!=0 && timerGPSAnimation==0)
+    {
+      timerGPSAnimation = millis();
+    }
+    if(millis()-lastDrawNoGPS>200)
+    {
+      lastDrawNoGPS = millis();
+      int oldRandom = randomGPSNumber;
+      while(oldRandom == randomGPSNumber)
+      {
+        randomGPSNumber = random(4);
+      }
+    }
+    if(timerGPSAnimation!=0)
+    {
+//      Serial.print(drawRemember);
+//      Serial.print("\t");
+//      Serial.print((drawRemember & 1) == 1);
+//      Serial.print("\t");
+//      Serial.print((drawRemember & 2) == 2);
+//      Serial.print("\t");
+//      Serial.print((drawRemember & 4) == 4);
+//      Serial.print("\t");
+//      Serial.println((drawRemember & 8) == 8);
+      if(randomGPSNumber==0 || (drawRemember & 1) == 1)
+      {
+        drawRemember |= 1;
+        display.drawDisc(16, 16, 12, U8G2_DRAW_UPPER_RIGHT);
+      }
+      if(randomGPSNumber==1 || (drawRemember & 2) == 2)
+      {
+        drawRemember |= 2;
+        display.drawDisc(16, 16, 12, U8G2_DRAW_LOWER_LEFT);
+      }
+      if(randomGPSNumber==2 || (drawRemember & 4) == 4)
+      {
+        drawRemember |= 4;
+        display.drawDisc(16, 16, 12, U8G2_DRAW_LOWER_RIGHT);
+      }
+      if(randomGPSNumber==3 || (drawRemember & 8) == 8)      
+      {
+        drawRemember |= 8;
+        display.drawDisc(16, 16, 12, U8G2_DRAW_UPPER_LEFT);
+      }
+      display.setCursor(32, 24);
+      display.setFont(u8g2_font_logisoso16_tf);
+      //display.print("No GPS Fix");
+      display.print("Signal Get");
+      for(int i = 0; i < GPSSats && i < 12 && millis()%500>250; i++)
+      {
+        display.drawDisc(35+i*8, 2, 2);
+      }
+    }
+    else
+    {
+      if(randomGPSNumber==0)
+      {
+        display.drawDisc(16, 16, 12, U8G2_DRAW_UPPER_RIGHT);
+      }
+      else if(randomGPSNumber==1)
+      {
+        display.drawDisc(16, 16, 12, U8G2_DRAW_LOWER_LEFT);
+      }
+      else if(randomGPSNumber==2)
+      {
+        display.drawDisc(16, 16, 12, U8G2_DRAW_LOWER_RIGHT);
+      }
+      else
+      {
+        display.drawDisc(16, 16, 12, U8G2_DRAW_UPPER_LEFT);
+      }
+      display.setCursor(32, 24);
+      display.setFont(u8g2_font_logisoso16_tf);
+      display.print("No GPS Fix");
+      for(int i = 0; i < GPSSats && i < 12; i++)
+      {
+        display.drawDisc(35+i*8, 2, 2);
+      }
+    }
   }
   else
   {
     float mySpeed = speedMPH;
     //mySpeed = (millis()/100)%19;
-    if(mySpeed<2)
+    if(mySpeed<1)
     {
       mySpeed = 0;
     }
@@ -309,7 +390,7 @@ void determineAndRenderMode(int mode, U8G2 display, bool left)
 }
 void displayLogic()
 {
-  bool illNow = analogRead(ILL_INPUT)>100;
+  bool illNow = digitalRead(ILL_INPUT);
   if(illNow && !ill)
   {
     u8g2r.setContrast(0);
@@ -355,14 +436,14 @@ void render()
       u8g2r.print("Tailgate Down!");
       u8g2r.sendBuffer();
     }
-    else if(switchA)
-    {
-      u8g2r.clearBuffer();
-      u8g2r.setCursor(0, 23);
-      u8g2r.setFont(u8g2_font_crox4h_tf);
-      u8g2r.print("Bed Lights On");
-      u8g2r.sendBuffer();
-    }
+//    else if(switchA)
+//    {
+//      u8g2r.clearBuffer();
+//      u8g2r.setCursor(0, 23);
+//      u8g2r.setFont(u8g2_font_crox4h_tf);
+//      u8g2r.print("Bed Lights On");
+//      u8g2r.sendBuffer();
+//    }
     else
     {
       determineAndRenderMode(rightMode, u8g2r, false);

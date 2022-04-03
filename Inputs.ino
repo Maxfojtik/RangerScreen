@@ -81,7 +81,7 @@ void encoderPushed()
       }
       else if(menuMode == 3)
       {
-        ignoreTailgate = !ignoreTailgate;
+        //ignoreTailgate = !ignoreTailgate;
         EEPROM.write(3, ignoreTailgate ? 1 : 0); 
       }
     }
@@ -99,10 +99,10 @@ float avgVoltage()
 float getVoltage()//read car voltage with a voltage divider
 {
   //Serial.println(analogRead(VOLTAGE_INPUT));
-  float vin = (analogRead(VOLTAGE_INPUT)/1023.0*3.3);
-  float R1 = 47400;
-  float R2 = 7540;
-  float out = (vin*(R1+R2))/R2;
+  float vin = (analogRead(VOLT_INPUT)/1023.0*3.3);
+  float R1 = 47089;
+  float R2 = 8400;
+  float out = (vin*(R1+R2))/R2 + 0.6;//volt drop from diodes
   voltAvg[voltAvgIndex] = out;
   float avg = avgVoltage();
   voltAvgIndex++;
@@ -115,8 +115,9 @@ float getVoltage()//read car voltage with a voltage divider
 }
 void inputLogic()
 {
-  bedDown = analogRead(BED_INPUT)>100;
-  ill = analogRead(ILL_INPUT)>100;
+  int half = 1024/8;
+  bedDown = digitalRead(BED_INPUT);//analogRead(BED_INPUT)>half;
+  ill = digitalRead(ILL_INPUT);
   switchA = digitalRead(SWITCH_A);
   switchB = digitalRead(SWITCH_B);
   volts = getVoltage();
@@ -140,7 +141,11 @@ void inputLogic()
   {
     onReason = REASON_IGNITION;//there is no other reason we are on so it must be that the ignition is on
   }
-  if(!bedSwitch && analogRead(BED_SWITCH)>100)
+  else
+  {
+    onReason = REASON_NONE;
+  }
+  if(!bedSwitch && digitalRead(BED_SWITCH))
   {
     tailgateToggle = false;//turn off the tailgate toggle if we hit the button again
   }
@@ -165,6 +170,6 @@ void inputLogic()
   {
     encoderPushed();
   }
-  bedSwitch = analogRead(BED_SWITCH)>100;
+  bedSwitch = digitalRead(BED_SWITCH);
   encoderPush = encoderPushNow;
 }

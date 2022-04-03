@@ -5,22 +5,22 @@
 #include <NMEAGPS.h>
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h>
 
-#define OUTPUT0 3
-#define OUTPUT1 4
-#define OUTPUT2 5
-#define OUTPUT3 6
-#define LATCH_PIN 21
+#define OUTPUT0 24
+#define OUTPUT1 25
+#define OUTPUT2 26
+#define OUTPUT3 27
+#define LATCH_PIN 23
 
-#define VOLTAGE_INPUT A6
-#define ILL_INPUT A1
-#define ENCODER_PUSH 12
-#define ENCODER_A 11
-#define ENCODER_B 10
-#define ENCODER_PUSH 12
-#define BED_INPUT A8
-#define BED_SWITCH A9
-#define SWITCH_A 2
-#define SWITCH_B 9
+#define VOLT_INPUT A8
+#define IG_INPUT A14
+#define ILL_INPUT 39
+#define ENCODER_PUSH 28
+#define ENCODER_A 29
+#define ENCODER_B 30
+#define BED_INPUT 36
+#define BED_SWITCH 37
+#define SWITCH_A 40
+#define SWITCH_B 41
 
 #define NUMBER_OUTPUTS 4
 byte outs[NUMBER_OUTPUTS];
@@ -32,6 +32,7 @@ NMEAGPS  gps;
 gps_fix  fix;
 SFE_UBLOX_GNSS myGNSS;
 
+#define REASON_NONE -1
 #define REASON_IGNITION 0
 #define REASON_TAILGATEDOWN 1
 #define REASON_TAILGATESW 2
@@ -49,7 +50,7 @@ byte voltGraph[numGraphPix];//values: 0-32
 byte voltDisplayIndex = 0;
 int leftMode = -1;
 int rightMode = -1;
-float volts;
+double volts;
 int onReason = 0;//0 = ignition, 1 = tailgate, 2 = tailgate sw, 3 = switch_a, 4 = switch_b
 long startAnimation = 0;
 long oldPosition = 0;
@@ -69,6 +70,9 @@ float speedMPH = -1;
 float heading = -1;
 bool inited = false;
 bool GPSError = false;
+long timeInvalid = 0;
+long lastGPSComm = 0;
+byte GPSSats = 0;
 void setup() {
   //long start = millis();
   pinMode(LATCH_PIN, OUTPUT);
@@ -85,12 +89,14 @@ void setup() {
   digitalWrite(OUTPUT1, 0);
   digitalWrite(OUTPUT2, 0);
   digitalWrite(OUTPUT3, 0);
-  pinMode(VOLTAGE_INPUT,INPUT);
+  pinMode(IG_INPUT,INPUT);
   pinMode(ENCODER_PUSH,INPUT_PULLUP);
   pinMode(ILL_INPUT,INPUT);
   pinMode(BED_INPUT,INPUT);
-  pinMode(SWITCH_A,INPUT_PULLDOWN);
-  pinMode(SWITCH_B,INPUT_PULLDOWN);
+  pinMode(SWITCH_A,INPUT);
+  pinMode(SWITCH_B,INPUT);
+  pinMode(BED_SWITCH,INPUT_PULLDOWN);
+  pinMode(VOLT_INPUT,INPUT);
   delay(10);
   loadVariables();
   Serial.begin(115200);
@@ -110,12 +116,12 @@ void setup() {
   {
     onReason = REASON_SWITCHB;
   }
-  else if(analogRead(BED_INPUT)>100)
+  else if(digitalRead(BED_INPUT))
   {
     onReason = REASON_TAILGATEDOWN;
     return;//dont init if the gate went down
   }
-  else if(analogRead(BED_SWITCH)>100)
+  else if(digitalRead(BED_SWITCH))
   {
     onReason = REASON_TAILGATESW;
     tailgateToggle = true;
@@ -135,12 +141,12 @@ void init()
   u8g2r.clearBuffer();
   if (!myGNSS.begin()) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring."));
     GPSError = true;
   }
   else
   {
-    Serial2.begin(250000);
+    Serial5.begin(250000);
     myGNSS.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1);
     myGNSS.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
     myGNSS.enableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
@@ -180,7 +186,7 @@ void loop()
   if(millis()-lastFrame>loopTime)
   {
     lastFrame = millis();
-    digitalWrite(13, true);
+    //digitalWrite(13, true);
     if(volts<6 && !bedDown && leftMode!=-1 && !ill)
     {
       if(leftMode!=-2)
@@ -208,7 +214,7 @@ void loop()
     //digitalWrite(13, false);
     //Serial.print("time:\t");
     //Serial.println(millis()-lastFrame);
-    digitalWrite(13, false);
+    //digitalWrite(13, false);
   }
   if(inited)//only run GPS when inited, not useful anyway
   {

@@ -12,9 +12,16 @@ byte bedLightsFunction(byte time)
   return out;
 }
 float bedTime = 0;
+long bedDownTime = 0;
 void outputsLogic()
 {
-  boolean bedLightsOn = (bedDown && !ignoreTailgate) || switchA;
+  if(bedDown && !ignoreTailgate && bedDownTime==0)
+  {
+    bedDownTime = millis();
+  }
+  boolean bedLightsOn = (bedDown && !ignoreTailgate && millis()-bedDownTime<60*60*1000) || switchA;//60 minutes
+  //digitalWrite(13, bedLightsOn);
+  //volts = 12-(millis()%20000/20000.0*12);
   if(bedLightsOn && bedTime<255)
   {
     bedTime = bedTime + (1.0/loopTime)*255/2;
@@ -31,6 +38,9 @@ void outputsLogic()
       bedTime = 0;
     }
   }
+//  double minVolts = 10.5;
+//  double maxVolts = 11;
+//  double scaledVolts = mapDouble(volts, minVolts, maxVolts, 0, 255);
   if(bedTime>254)
   {
     outs[0] = 255;
@@ -47,8 +57,14 @@ void outputsLogic()
   {
     outs[0] = bedLightsFunction((byte)bedTime);
   }
+//  Serial.print(volts);
+//  Serial.print("\t");
+//  Serial.println(outs[0]);
   analogWrite(OUTPUT0, outs[0]);
   analogWrite(OUTPUT1, outs[1]);
   analogWrite(OUTPUT2, outs[2]);
   analogWrite(OUTPUT3, outs[3]);
+}
+long mapDouble(double x, double in_min, double in_max, double out_min, double out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }

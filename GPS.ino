@@ -67,31 +67,47 @@ float putAvgHeading(float headingin)
   }
   return avg;
 }
-long timeInvalid = 0;
+bool GPSDEBUG = 0;
 void GPSLogic()
 {
-//  if(Serial2.available()>0)
+//  while(Serial5.available()>0)
 //  {
-//    Serial.write(Serial2.read());
+//    Serial.write(Serial5.read());
 //  }
-//  return;
-  if(gps.available(Serial2)) 
+  //return;
+  if(gps.available(Serial5)) 
   {
+    lastGPSComm = millis();
     //Serial.println("----------------------read---------------------");
     fix = gps.read();
+    if(fix.valid.satellites)
+    {
+      if(GPSSats>fix.satellites)
+      {
+        GPSSats--;
+      }
+      if(GPSSats<fix.satellites)
+      {
+        GPSSats++;
+      }
+//      GPSSats = fix.satellites;
+//      Serial.println(fix.satellites);
+    }
     if(fix.valid.speed)
     {
+//      GPSDEBUG = !GPSDEBUG;
+//      digitalWrite(13, GPSDEBUG);
       speedMPH = putAvgMPH(fix.speed_mph());
       timeInvalid = -1;
       //Serial.println(speedMPH);
     }
     else
     {
-      if(timeInvalid==-1)//if we have an invalid time for more than 1 second start putting 0s.
+      if(timeInvalid==-1)//if we have an invalid time for more than .5 seconds start putting 0s.
       {
         timeInvalid = millis();
       }
-      if(millis()-timeInvalid>1000)
+      if(millis()-timeInvalid>500)
       {
         speedMPH = putAvgMPH(0);
       }
