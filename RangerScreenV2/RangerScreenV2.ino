@@ -12,7 +12,8 @@
 #define LATCH_PIN 23
 
 #define VOLT_INPUT A8
-#define IG_INPUT A14
+//#define IG_INPUT A14
+#define IG_INPUT A0
 #define ILL_INPUT 39
 #define ENCODER_PUSH 28
 #define ENCODER_A 29
