@@ -134,12 +134,12 @@ void setup() {
 void init()
 {
   digitalWrite(13, true);
+  u8g2r.begin();
+  u8g2r.setContrast(255);
+  u8g2r.clearBuffer();  
   u8g2l.begin();
   u8g2l.setContrast(255);
   u8g2l.clearBuffer();
-  u8g2r.begin();
-  u8g2r.setContrast(255);
-  u8g2r.clearBuffer();
   if (!myGNSS.begin()) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring."));
